@@ -9,7 +9,8 @@ from typing import TypedDict, Annotated, Literal
 import psycopg
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
-
+from dotenv import load_dotenv
+load_dotenv()
 from langgraph.graph import StateGraph, START, END, MessagesState
 from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.prebuilt import ToolNode
@@ -37,7 +38,7 @@ os.environ["GROQ_API_KEY"] = GROQ_API_KEY
 # LLM
 # ======================================================
 llm = ChatGroq(
-    model="meta-llama/llama-4-scout-17b-16e-instruct",
+    model="llama-3.3-70b-versatile",
     api_key=GROQ_API_KEY,
     temperature=0
 )

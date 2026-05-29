@@ -6,7 +6,7 @@ from langchain_groq import ChatGroq
 
 # 1. Initialize a lightweight LLM specifically for routing
 llm = ChatGroq(
-    model="meta-llama/llama-4-scout-17b-16e-instruct", # Feel free to match whatever model you are using in main.py
+    model="llama-3.3-70b-versatile", # Feel free to match whatever model you are using in main.py
     api_key=os.getenv("GROQ_API_KEY"),
     temperature=0
 )
@@ -37,14 +37,15 @@ def route_initial_query(state) -> Literal["planner_agent", "general_chat_agent"]
     """Acts as the traffic cop for the very first user message."""
     latest_message = state["messages"][-1].content
     
-    # Use the LLM to strictly classify the text
+    # Force the LLM to ignore all tools and focus only on the classification schema
     classifier_llm = llm.with_structured_output(RouteClassification)
+    
+    # We pass 'tools=[]' to ensure it has no capability to call anything else
     decision = classifier_llm.invoke([
-        SystemMessage(content="You are a routing classification system."), 
+        SystemMessage(content="You are a routing classification system. Do not use tools."), 
         HumanMessage(content=latest_message)
     ])
     
-    # Route the graph based on the classification
     if decision.intent == "travel_planning":
         return "planner_agent"
     
