@@ -51,12 +51,21 @@ def critic_agent(state):
         }
 # 4. Create the Routing Logic
 def route_critic(state) -> Literal["human_approval", "planner_agent"]:
-    """Reads the state to see if the QA check passed or failed."""
-    latest_msg = state["messages"][-1].content
+    """Reads the state to see if the QA check passed or failed, with a Circuit Breaker."""
+    messages = state.get("messages", [])
+    latest_msg = messages[-1].content
     
     if "QA REJECTION:" in latest_msg:
-        # Send it back to the drawing board
+        # CIRCUIT BREAKER: Count how many times we've rejected the plan in this thread
+        rejection_count = sum(1 for msg in messages if hasattr(msg, 'content') and "QA REJECTION:" in msg.content)
+        
+        if rejection_count >= 2:
+            print("⚡ CIRCUIT BREAKER TRIPPED: Max QA retries reached. Forcing human review.")
+            # We override the rejection and force the graph to the user
+            return "human_approval"
+            
+        # If under the limit, send it back to the drawing board
         return "planner_agent"
     
-    # Send it to the user for final approval
+    # Send it to the user for final approval if it passed
     return "human_approval"

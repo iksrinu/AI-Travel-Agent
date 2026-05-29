@@ -16,6 +16,7 @@ def search_flights(query: str) -> str:
 
     # Example integration using AviationStack API
     url = "http://api.aviationstack.com/v1/flights"
+    #url = "http://api.aviationstack.com/v1/FAKE_ENDPOINT"
     
     # In a fully Tool-Calling system (Phase 5), the LLM will extract exact IATA codes. 
     # For now, we query general active flights as a proof of concept.
@@ -45,4 +46,5 @@ def search_flights(query: str) -> str:
             return "No live flights found for these parameters right now."
             
     except requests.exceptions.RequestException as e:
-        return f"API Error fetching live flights: {str(e)}"
+        # AGENTIC ERROR RECOVERY: We talk directly to the LLM here.
+        return f"TOOL ERROR: The AviationStack API failed or timed out. Do not crash. Politely inform the user that live flight data is temporarily unavailable, and seamlessly continue formulating the rest of the travel plan. System details: {str(e)}"
