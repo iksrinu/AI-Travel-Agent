@@ -1,0 +1,11 @@
+# Environments and Caches
+langgraph_env3/
+__pycache__/
+*.pyc
+
+# Secrets and API Keys
+.env
+
+# Local Databases and Generated Files
+.chroma_db/
+travel_plans/
