@@ -17,7 +17,8 @@ from langgraph.prebuilt import ToolNode
 from langchain_core.messages import AnyMessage, HumanMessage, AIMessage, SystemMessage
 from langchain_core.tools import tool
 from langchain_groq import ChatGroq
-
+from router import general_chat_agent, route_initial_query
+from critic import critic_agent, route_critic
 from tools.tavily_tool import tavily_search
 from tools.flight_tool import search_flights
 from tools.memory_tool import save_user_preference, get_relevant_memories
@@ -158,25 +159,51 @@ def check_human_feedback(state: TravelState) -> Literal["planner_agent", END]:
 # GRAPH SETUP
 # ======================================================
 graph = StateGraph(TravelState)
+
+# 1. Add all nodes
 graph.add_node("planner_agent", planner_agent)
+graph.add_node("general_chat_agent", general_chat_agent) 
+graph.add_node("critic_agent", critic_agent) # NEW
 graph.add_node("tools", ToolNode(tools)) 
 graph.add_node("summarize_conversation", summarize_conversation)
 graph.add_node("human_approval", human_approval)
 
-graph.add_edge(START, "planner_agent")
+# 2. Start at the conditional router
+graph.add_conditional_edges(
+    START, 
+    route_initial_query,
+    {
+        "planner_agent": "planner_agent",
+        "general_chat_agent": "general_chat_agent"
+    }
+)
+
+# 3. Standard Planner Edges (Intercepted!)
 graph.add_conditional_edges(
     "planner_agent", 
     should_continue,
     {
         "tools": "tools",
-        "human_approval": "human_approval"
+        # We intercept the flow here so the Critic reviews the plan first
+        "human_approval": "critic_agent" 
     }
 )
 graph.add_edge("tools", "planner_agent")
 graph.add_edge("summarize_conversation", "planner_agent")
 
-# Phase 8: Conditional Edge out of the human node
+# 4. Critic Routing (Pass or Fail)
+graph.add_conditional_edges(
+    "critic_agent",
+    route_critic,
+    {
+        "human_approval": "human_approval", # Passed QA, show the user
+        "planner_agent": "planner_agent"    # Failed QA, rewrite it
+    }
+)
+
+# 5. Human Feedback Loop
 graph.add_conditional_edges("human_approval", check_human_feedback)
+graph.add_edge("general_chat_agent", END)
 
 # ======================================================
 # COMPILE APP WITH INTERRUPT

@@ -20,3 +20,5 @@ try:
     print("SUCCESS:", chat_completion.choices[0].message.content)
 except Exception as e:
     print("FAILED:", e)
+
+    #Plan the first two weeks of a massive one-year backpacking trip across Africa. I am flying out of Hyderabad and want to start by tackling Mt. Kilimanjaro in Tanzania. I strictly want to use local transport and budget accommodations, so no luxury hotels. Please find my flights, places to stay, and build a rugged itinerary.
